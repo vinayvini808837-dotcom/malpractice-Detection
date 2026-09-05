@@ -1,0 +1,105 @@
+import cv2
+import mediapipe as mp
+import datetime
+from ultralytics import YOLO
+
+# Load YOLO and initialize MediaPipe Pose
+model = YOLO('yolov8n.pt')
+mp_pose = mp.solutions.pose
+pose = mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5)
+
+suspect_registry = {}
+
+def get_iou(boxA, boxB):
+    """Calculates the percentage of overlap between two bounding boxes."""
+    xA, yA = max(boxA[0], boxB[0]), max(boxA[1], boxB[1])
+    xB, yB = min(boxA[2], boxB[2]), min(boxA[3], boxB[3])
+    interArea = max(0, xB - xA) * max(0, yB - yA)
+    boxAArea = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
+    boxBArea = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
+    return interArea / float(boxAArea + boxBArea - interArea) if (boxAArea + boxBArea - interArea) > 0 else 0
+
+def draw_structured_overlay(frame, cam_id, box, track_id, status_level, reason):
+    x1, y1, x2, y2 = map(int, box)
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    color = (0, 0, 255) if status_level == "CONFIRMED" else (0, 255, 0)
+    label = f"ID:{track_id} | {reason}" if status_level == "CONFIRMED" else f"ID:{track_id} | CLEAR"
+
+    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+    cv2.rectangle(frame, (x1, y1 - 25), (x1 + len(label)*9, y1), color, -1)
+    cv2.putText(frame, label, (x1 + 5, y1 - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+
+    cv2.rectangle(frame, (0, 0), (frame.shape[1], 35), (20, 20, 20), -1)
+    header_color = (0, 0, 255) if len(suspect_registry) > 0 else (0, 255, 0)
+    cv2.putText(frame, f"[{timestamp}] | {cam_id} | ACTIVE THREATS: {len(suspect_registry)} (Press 'c' to clear)", (10, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, header_color, 2)
+    return frame
+
+cap = cv2.VideoCapture(0)
+
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret: break
+
+    # UPGRADE 1: Switch to BoT-SORT for stable ID tracking during occlusions
+    results = model.track(frame, persist=True, tracker="botsort.yaml", verbose=False)[0]
+    current_persons = []
+
+    if results.boxes.id is not None:
+        boxes = results.boxes.xyxy.cpu().numpy()
+        track_ids = results.boxes.id.cpu().numpy().astype(int)
+
+        for box, track_id in zip(boxes, track_ids):
+            x1, y1, x2, y2 = map(int, box)
+            current_persons.append((track_id, box))
+            
+            # UPGRADE 2: Isolate the person and apply MediaPipe Pose Logic
+            cx1, cy1 = max(0, x1), max(0, y1)
+            cx2, cy2 = min(frame.shape[1], x2), min(frame.shape[0], y2)
+            person_crop = frame[cy1:cy2, cx1:cx2]
+            
+            if person_crop.size > 0:
+                crop_rgb = cv2.cvtColor(person_crop, cv2.COLOR_BGR2RGB)
+                pose_results = pose.process(crop_rgb)
+                
+                if pose_results.pose_landmarks:
+                    landmarks = pose_results.pose_landmarks.landmark
+                    nose = landmarks[mp_pose.PoseLandmark.NOSE]
+                    left_ear = landmarks[mp_pose.PoseLandmark.LEFT_EAR]
+                    right_ear = landmarks[mp_pose.PoseLandmark.RIGHT_EAR]
+                    left_wrist = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
+                    
+                    # Logic A: Head Turn (Nose proximity to one ear vs the other)
+                    ear_dist = abs(left_ear.x - right_ear.x)
+                    if ear_dist > 0:
+                        nose_ratio = abs(nose.x - left_ear.x) / ear_dist
+                        if nose_ratio < 0.2 or nose_ratio > 0.8:
+                            suspect_registry[track_id] = "SUSPICIOUS HEAD TURN"
+                    
+                    # Logic B: Cross-Desk Reach (Wrist extends far outside torso)
+                    if left_wrist.x < 0.1 or left_wrist.x > 0.9:
+                        suspect_registry[track_id] = "CROSS-DESK REACH"
+
+        # UPGRADE 3: Bounding Box Overlap (IoU) for Fight Detection
+        for i in range(len(current_persons)):
+            for j in range(i + 1, len(current_persons)):
+                id1, box1 = current_persons[i]
+                id2, box2 = current_persons[j]
+                
+                if get_iou(box1, box2) > 0.15: # 15% overlap triggers altercation
+                    suspect_registry[id1] = "FIGHT / COLLISION"
+                    suspect_registry[id2] = "FIGHT / COLLISION"
+
+        for track_id, box in current_persons:
+            status = "CONFIRMED" if track_id in suspect_registry else "NORMAL"
+            reason = suspect_registry.get(track_id, "NONE")
+            frame = draw_structured_overlay(frame, "CAM_01_EXAM", box, track_id, status, reason)
+
+    cv2.imshow("Campus Sentinel - Phase 2", frame)
+    
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('c'): suspect_registry.clear()
+    elif key == ord('q'): break
+
+cap.release()
+cv2.destroyAllWindows()

@@ -19,21 +19,27 @@ def get_iou(boxA, boxB):
     boxBArea = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
     return interArea / float(boxAArea + boxBArea - interArea) if (boxAArea + boxBArea - interArea) > 0 else 0
 
-def draw_structured_overlay(frame, cam_id, box, track_id, status_level, reason):
+def draw_structured_overlay(frame, cam_id, box, track_id, status_level, reason, timer_str="2.0s"):
+    """
+    Overlay Bounding Box Display Logic:
+    - DO NOT render any bounding box for clear/normal students (clean, transparent overlay).
+    - ONLY draw bounding box in RED when actively flagged for malpractice.
+    - Display alert label and timer above red bounding box during violation state.
+    """
+    if status_level != "CONFIRMED":
+        return frame
+
     x1, y1, x2, y2 = map(int, box)
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    red_color = (0, 0, 255)
+    label = f"ID:{track_id} | {reason} | {timer_str}"
 
-    color = (0, 0, 255) if status_level == "CONFIRMED" else (0, 255, 0)
-    label = f"ID:{track_id} | {reason}" if status_level == "CONFIRMED" else f"ID:{track_id} | CLEAR"
+    cv2.rectangle(frame, (x1, y1), (x2, y2), red_color, 2)
+    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)
+    cv2.rectangle(frame, (x1, max(0, y1 - 22)), (x1 + tw + 10, y1), red_color, -1)
+    cv2.putText(frame, label, (x1 + 5, y1 - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1)
 
-    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-    cv2.rectangle(frame, (x1, y1 - 25), (x1 + len(label)*9, y1), color, -1)
-    cv2.putText(frame, label, (x1 + 5, y1 - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-
-    cv2.rectangle(frame, (0, 0), (frame.shape[1], 35), (20, 20, 20), -1)
-    header_color = (0, 0, 255) if len(suspect_registry) > 0 else (0, 255, 0)
-    cv2.putText(frame, f"[{timestamp}] | {cam_id} | ACTIVE THREATS: {len(suspect_registry)} (Press 'c' to clear)", (10, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, header_color, 2)
     return frame
+
 
 cap = cv2.VideoCapture(0)
 

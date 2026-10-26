@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Sentinel // Autonomous Exam Hall Malpractice & CCTV Integrity System</title>
+  <meta name="description" content="Edge-computing intelligent CCTV surveillance framework for exam hall cheating detection, temporal persistence filtering, and offline-capable SQLite telemetry.">
+  
+  <!-- Google Fonts: Outfit (modern sans) & JetBrains Mono (tactical monospace) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css?v=6.0">
+  <style id="fullWidthEnlargedTheme">
+    /* Remove side empty space and enlarge to both sides */
+    html, body {
+      width: 100% !important;
+      overflow-x: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .top-nav-bar {
+      width: 100% !important;
+      padding: 10px 14px !important;
+      box-sizing: border-box !important;
+    }
+    .nav-container {
+      max-width: 100% !important;
+      width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .page-container {
+      max-width: 100% !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 10px 14px 60px !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 20px !important;
+    }
+    .workspace-section {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 8px !important;
+    }
+    .workspace-header-bar {
+      display: flex !important;
+      flex-direction: column !important;
+      width: 100% !important;
+      margin: 0 !important;
+      gap: 8px !important;
+    }
+    /* Mode tabs enlarged across both sides */
+    .workspace-mode-tabs {
+      display: flex !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      align-items: stretch !important;
+      gap: 8px !important;
+      background: var(--bg-surface) !important;
+      padding: 5px 8px !important;
+      border-radius: 10px !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+    .mode-tab {
+      flex: 1 1 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      padding: 10px 16px !important;
+      font-size: 0.94rem !important;
+      font-weight: 700 !important;
+      border-radius: 8px !important;
+      white-space: nowrap !important;
+    }
+    /* CCTV filters enlarged across both sides */
+    .cctv-filter-toolbar {
+      display: flex !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 8px !important;
+      background: rgba(13, 18, 31, 0.7) !important;
+      padding: 6px 12px !important;
+      border-radius: 8px !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    .filter-chip {
+      flex: 1 1 auto !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 6px !important;
+      padding: 6px 12px !important;
+      font-size: 0.76rem !important;
+      border-radius: 6px !important;
+      white-space: nowrap !important;
+    }
+    /* Video console card enlarged across both sides */
+    .video-console-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      border-radius: 10px !important;
+    }
+    .console-meta-bar {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      width: 100% !important;
+      padding: 10px 16px !important;
+      box-sizing: border-box !important;
+      gap: 12px !important;
+    }
+    .meta-left {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      gap: 10px !important;
+      flex-wrap: wrap !important;
+    }
+    .meta-right {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      gap: 8px !important;
+      flex-wrap: wrap !important;
+    }
+    .video-viewport-container {
+      width: 100% !important;
+      height: 480px !important;
+      max-height: 52vh !important;
+    }
+    /* Persistence buffer positioned below video & scrubber */
+    .temporal-meter-hud {
+      position: relative !important;
+      inset: auto !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      background: #090e18 !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-left: none !important;
+      border-right: none !important;
+      border-radius: 0 !important;
+      padding: 8px 16px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 6px !important;
+      box-shadow: none !important;
+      z-index: 5 !important;
+    }
+    .upload-dropzone-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-height: 460px !important;
+      box-sizing: border-box !important;
+      margin: 4px 0 20px !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient Security Glow -->
+  <div class="ambient-glow ambient-glow-top"></div>
+
+  <!-- EMERGENCY SIREN STROBE BANNER (Appears when Malpractice is Confirmed) -->
+  <div class="siren-alert-banner" id="sirenAlertBanner" style="display: none;">
+    <div class="siren-icon-pulse">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      </svg>
+    </div>
+    <div class="siren-banner-text">
+      <div class="siren-title">⚠️ MALPRACTICE CONFIRMED // EMERGENCY SIREN ACTIVE</div>
+      <div class="siren-subtitle" id="sirenReasonText">SUSTAINED HEAD TURN (&gt;2.0s) DETECTED ON CANDIDATE DESK #01</div>
+    </div>
+    <div class="siren-banner-actions">
+      <button class="btn-siren-dismiss" id="btnDismissSiren" title="Shortcut: Press 'C' key">
+        SILENCE SIREN &amp; CLEAR [C]
+      </button>
+    </div>
+  </div>
+
+  <!-- STICKY TOP NAVIGATION BAR -->
+  <header class="top-nav-bar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <div class="brand-logo-badge">
+          <div class="sensor-pulse-ring"></div>
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+            <path d="M12 6a6 6 0 1 0 6 6 6 6 0 0 0-6-6zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"/>
+            <circle cx="12" cy="12" r="2" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">CAMPUS SENTINEL</div>
+          <div class="brand-sub">EDGE AI CCTV SURVEILLANCE</div>
+        </div>
+      </div>
+
+      <!-- Navigation Section Links -->
+      <nav class="nav-links">
+        <button class="nav-link-btn active" data-target="workspaceSection" id="navBtnMonitor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M23 7l-7 5 7 5V7z"/>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+          <span>CCTV Monitor</span>
+        </button>
+        <button class="nav-link-btn" data-target="sectionSnapshots" id="navBtnSnapshots">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          <span>Evidence Snapshots</span>
+          <span class="nav-counter-badge" id="navSnapshotCount">0</span>
+        </button>
+        <button class="nav-link-btn" data-target="sectionVault" id="navBtnVault">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <span>Incident Vault</span>
+        </button>
+      </nav>
+
+      <!-- Global Actions -->
+      <div class="nav-actions">
+        <!-- Live Camera Hardware Power Switch -->
+        <button class="camera-power-toggle active" id="btnToggleCameraPower" title="Shortcut: Press 'V' to toggle camera ON / OFF">
+          <span class="power-dot"></span>
+          <span class="power-text" id="powerBtnText">CAMERA: ON</span>
+          <span class="power-kbd-tag">[V]</span>
+        </button>
+
+        <!-- Invigilator Warning Chime -->
+        <button class="action-btn-pill active" id="btnTestSiren" title="Invigilator Warning Sound: Alerts once for 3 seconds then automatically stops">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span id="sirenAudioStatus">CHIME: 3s</span>
+        </button>
+
+        <!-- Clear Registry Button -->
+        <button class="action-btn-pill btn-danger" id="btnClearRegistry" title="Shortcut: Press 'C' key">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+          <span>Reset [C]</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN SCROLLABLE APP CONTAINER -->
+  <main class="page-container">
+
+    <!-- ================================================================= -->
+    <!-- SECTION 1: DEDICATED CCTV MONITOR WORKSPACE                       -->
+    <!-- Clean, spacious, and uncluttered with separate views for Live & Upload -->
+    <!-- ================================================================= -->
+    <section class="workspace-section" id="workspaceSection">
+      
+      <!-- Workspace Navigation Tabs (Full Width Left Corner to Right Corner & Quite Bigger) -->
+      <div class="workspace-header-bar">
+        <div class="workspace-mode-tabs">
+          <button class="mode-tab active" id="tabModeLive" data-mode="WEBCAM" onclick="if(window.switchToLiveMode) window.switchToLiveMode();">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+              <path d="M23 7l-7 5 7 5V7z"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            <span>Live Camera Feed</span>
+            <span class="tab-badge-live">LIVE</span>
+          </button>
+          <button class="mode-tab" id="tabModeUpload" data-mode="UPLOADED" onclick="if(window.switchToUploadMode) window.switchToUploadMode();">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+            <span>Upload Exam Video</span>
+          </button>
+          <button class="mode-tab" id="tabModeSimulated" data-mode="SIMULATED" onclick="if(window.switchToSimulatedMode) window.switchToSimulatedMode();">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
+              <line x1="7" y1="2" x2="7" y2="22"/>
+              <line x1="17" y1="2" x2="17" y2="22"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+            </svg>
+            <span>Dynamic Classroom Simulation</span>
+          </button>
+        </div>
+
+        <!-- Real-Time CCTV Filter Toggles (Right Corner & Quite Bigger) -->
+        <div class="cctv-filter-toolbar" id="cctvFilterToolbar">
+          <span class="toolbar-label">CCTV FILTERS:</span>
+          <button class="filter-chip" id="filterNightVision" title="Toggle authentic green Night Vision tint">
+            <span class="filter-chip-dot"></span>
+            <span>Night Vision</span>
+          </button>
+          <button class="filter-chip active" id="filterScanlines" title="Toggle CRT scanlines">
+            <span class="filter-chip-dot"></span>
+            <span>Scanlines &amp; Grain</span>
+          </button>
+          <button class="filter-chip active" id="filterRec" title="Toggle blinking REC indicator">
+            <span class="filter-chip-dot"></span>
+            <span>REC Indicator</span>
+          </button>
+          <button class="filter-chip active" id="filterTimestamp" title="Toggle live on-screen timestamp">
+            <span class="filter-chip-dot"></span>
+            <span>Timestamp</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PRIMARY VIDEO CONSOLE CARD (Edge-to-Edge Full Screen) -->
+      <div class="video-console-card" id="mainConsoleCard">
+        
+        <!-- Video Header Info Bar (Full Width Left to Right Corner) -->
+        <div class="console-meta-bar">
+          <div class="meta-left">
+            <span class="cam-status-pill live-pill" id="cctvStatusPill">● CCTV ACTIVE</span>
+            <span class="cam-title" id="cctvTitle">CAM_01_EXAM_HALL // DYNAMIC ALL-STUDENT DETECTOR (YOLOv8-POSE)</span>
+          </div>
+          <div class="meta-right">
+            <span class="meta-badge"><span id="hudFps">30.0</span> FPS</span>
+            <span class="meta-badge">LATENCY: <span id="hudLatency" class="text-cyan">3.2 ms</span></span>
+            <span class="meta-badge badge-model">YOLOv8-pose (conf=0.25, max_det=50)</span>
+            <span class="hud-verdict-badge normal" id="hudVerdictBadge">STATUS: NORMAL</span>
+          </div>
+        </div>
+
+        <!-- CINEMATIC VIDEO & AI CANVAS VIEWPORT -->
+        <div class="video-viewport-container" id="videoViewport">
+          <!-- CRT Scanlines Overlay (Toggleable) -->
+          <div class="hud-scanlines" id="hudScanlines"></div>
+
+          <!-- Night Vision Overlay Tint (Toggleable) -->
+          <div class="night-vision-overlay" id="nightVisionOverlay" style="display: none;"></div>
+
+          <!-- Blinking REC Indicator (From Snapshot Features!) -->
+          <div class="cctv-rec-indicator" id="cctvRecIndicator">
+            <span class="rec-red-dot"></span>
+            <span class="rec-text">REC</span>
+          </div>
+
+          <!-- Live On-Screen Timestamp (From Snapshot Features!) -->
+          <!-- Live On-Screen Timestamp (From Snapshot Features!) -->
+          <div class="cctv-live-timestamp" id="cctvLiveTimestamp">
+            <span id="osdDate">2026-10-23</span> <span id="osdTime">22:45:00</span> <span class="osd-cam">CAM-01</span>
+          </div>
+
+          <!-- The Live Telemetry Canvas (Clean, Uncovered View) -->
+          <canvas id="telemetryCanvas" class="telemetry-canvas" width="1280" height="720"></canvas>
+
+          <!-- Backend Live AI Video Stream (MJPEG) -->
+          <img id="mjpegFeed" class="telemetry-canvas" src="" alt="MJPEG Video Feed" style="display: none;" />
+
+          <!-- Dedicated Classroom Simulator AI Video Stream (MJPEG) -->
+          <img id="classroomMjpegFeed" class="telemetry-canvas" src="" alt="Classroom Simulation Feed" style="display: none;" />
+
+          <!-- Hidden Webcam Video Stream Source -->
+          <video id="webcamElement" class="webcam-source-video" autoplay playsinline muted></video>
+
+          <!-- Hidden Uploaded Video File Stream Source -->
+          <video id="uploadedVideoElement" class="uploaded-source-video" playsinline muted></video>
+
+          <!-- Live Camera Powered Off Overlay (Clean Standby UI) -->
+          <div class="camera-off-overlay" id="cameraOffOverlay" style="display: none;">
+            <div class="standby-prompt-box">
+              <div class="standby-prompt-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40">
+                  <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/>
+                  <path d="M23 7l-7 5 7 5V7z"/>
+                  <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <h3>LIVE CCTV CAMERA IS TURNED OFF</h3>
+              <p>Hardware stream is paused and optical sensors are in standby mode. Privacy is preserved and zero stream data is being captured.</p>
+              <div class="standby-actions-row">
+                <button class="btn-green-primary" id="btnTurnOnCameraNow" title="Shortcut: Press 'V'">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span>TURN ON LIVE CAMERA [V]</span>
+                </button>
+                <button class="btn-outline-secondary" id="btnSwitchSimulatedFromOff">
+                  <span>Switch to Classroom Simulator</span>
+                </button>
+              </div>
+              <span class="standby-hint">Tip: Press <kbd class="kbd-badge">V</kbd> on your keyboard anytime to toggle camera ON / OFF.</span>
+            </div>
+          </div>
+
+          <!-- Laptop Camera Permission Required Fallback Banner -->
+          <div class="camera-prompt-overlay" id="cameraPromptOverlay" style="display: none;">
+            <div class="standby-prompt-box">
+              <div class="standby-prompt-icon cyan-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40">
+                  <path d="M23 7l-7 5 7 5V7z"/>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+              </div>
+              <h3>ACTIVATE LAPTOP CAMERA FOR EXAM SURVEILLANCE</h3>
+              <p>Campus Sentinel requires camera access to monitor candidate head posture, gaze persistence, and cross-desk reaching in real-time.</p>
+              <button class="btn-green-primary" id="btnRequestCamera">
+                ENABLE MY LAPTOP CAMERA
+              </button>
+              <span class="standby-hint">Processing runs 100% locally at edge via browser WebAssembly. Zero video uploaded.</span>
+            </div>
+          </div>
+
+          <!-- In-Viewport Exam Video Upload Prompt Overlay (Appears when in Upload Mode & No Video Loaded) -->
+          <div class="camera-prompt-overlay" id="videoUploadPromptOverlay" style="display: none; cursor: pointer;">
+            <div class="standby-prompt-box">
+              <div class="standby-prompt-icon cyan-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                </svg>
+              </div>
+              <h3>UPLOAD EXAM CCTV VIDEO FOR AI ANALYSIS</h3>
+              <p>Click anywhere here or drag and drop your recorded exam CCTV video file (MP4, WebM, CCTV recording) to start automated cheating detection.</p>
+              <button class="btn-green-primary" id="btnUploadPromptAction">
+                <span>CHOOSE EXAM VIDEO FILE</span>
+              </button>
+              <span class="standby-hint">100% Client-side local processing. Zero video uploaded to external servers.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DEDICATED UPLOADED VIDEO PLAYBACK & FORENSICS SCRUBBER (The video line symbol) -->
+        <div class="uploaded-video-controls" id="uploadedVideoControls" style="display: none;">
+          <button class="v-control-btn" id="btnPlayPauseVideo" title="Play/Pause Uploaded Video">
+            <svg id="vIconPlay" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <svg id="vIconPause" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="display: none;">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+          </button>
+          <div class="v-timeline-wrapper">
+            <input type="range" id="vProgressBar" min="0" max="100" value="0" class="v-progress-slider">
+          </div>
+          <div class="v-time-display">
+            <span id="vCurrentTime">00:00</span> / <span id="vDuration">00:00</span>
+          </div>
+          <div class="v-speed-group">
+            <button class="v-speed-chip active" data-speed="1.0">1x</button>
+            <button class="v-speed-chip" data-speed="2.0">2x</button>
+          </div>
+          <button class="v-control-btn btn-change-video" id="btnChangeVideo" title="Upload Another Video" style="margin-left: auto; width: auto; padding: 0 14px; gap: 6px; font-size: 0.78rem; font-family: var(--font-mono); border-radius: 6px; display: inline-flex; align-items: center; background: rgba(0, 242, 254, 0.12); border: 1px solid rgba(0, 242, 254, 0.35); color: #00f2fe; cursor: pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+            <span>Change Video</span>
+          </button>
+        </div>
+
+        <!-- REAL-TIME MALPRACTICE TEMPORAL PERSISTENCE BUFFER (Positioned cleanly BELOW video & scrubber) -->
+        <div class="temporal-meter-hud" id="temporalMeterHud">
+          <div class="meter-info-row">
+            <span class="meter-label">TEMPORAL PERSISTENCE BUFFER (main.py):</span>
+            <span class="meter-frames" id="meterFrameCount">0 / 40 FRAMES (0.0s / 2.0s)</span>
+          </div>
+          <div class="meter-track">
+            <div class="meter-fill" id="meterFill" style="width: 0%;"></div>
+          </div>
+          <div class="meter-subtext" id="meterStatusSubtext">
+            Looking straight ahead. Benign movement filtering active (No Malpractice).
+          </div>
+        </div>
+
+        <!-- METRICS & SIMULATION CONTROL BAR BELOW VIEWPORT -->
+        <div class="console-bottom-bar">
+          <div class="metrics-quad-grid">
+            <div class="metric-quad-card">
+              <span class="metric-quad-title">GAZE NOSE-EAR RATIO</span>
+              <div class="metric-quad-val text-cyan" id="metricGazeRatio">0.50 <span class="unit">ratio</span></div>
+              <span class="metric-quad-sub">0.50 = Straight | &lt;0.20 or &gt;0.80 = Turned</span>
+            </div>
+            <div class="metric-quad-card">
+              <span class="metric-quad-title">TEMPORAL PERSISTENCE FILTER</span>
+              <div class="metric-quad-val text-green" id="metricBufferStatus">40 Frames <span class="unit">(2.0s)</span></div>
+              <span class="metric-quad-sub">Filters benign twitches &amp; normal glances</span>
+            </div>
+            <div class="metric-quad-card">
+              <span class="metric-quad-title">FLAGGED SUSPECTS</span>
+              <div class="metric-quad-val text-red" id="threatCountBadge">0 FLAGGED</div>
+              <span class="metric-quad-sub">Red bounding box active only on threat</span>
+            </div>
+            <div class="metric-quad-card">
+              <span class="metric-quad-title">DETECTOR COVERAGE</span>
+              <div class="metric-quad-val text-purple">50 <span class="unit">max_det</span></div>
+              <span class="metric-quad-sub">conf=0.25 &bull; iou=0.45 &bull; All students</span>
+            </div>
+          </div>
+
+          <!-- Quick Simulation Test Triggers (Visible strictly inside Dynamic Classroom Simulation tab) -->
+          <div class="simulation-triggers-row" id="simulationTriggersRow" style="display: none;">
+            <span class="triggers-label">QUICK CHEATING SIMULATION TESTS:</span>
+            <div class="triggers-buttons">
+              <button class="btn-test-chip" id="btnSimTurnLeft">Anomaly A: Peeking &gt;35&deg; (DESK_04)</button>
+              <button class="btn-test-chip" id="btnSimCollusion">Anomaly B: Desk Collusion (DESK_06)</button>
+              <button class="btn-test-chip" id="btnSimTurnRight">Anomaly C: Corridor Reach (DESK_07)</button>
+              <button class="btn-test-chip" id="btnSimLookDown">Anomaly C: Standing (DESK_02)</button>
+              <button class="btn-test-chip" id="btnSimMultiThreat">Multi-Person Alert</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- DEDICATED UPLOAD VIEW ZONE (Appears when Upload Mode is Selected) -->
+      <div class="upload-dropzone-card" id="uploadDropzoneCard" style="display: none;">
+        <input type="file" id="videoFileInput" accept="video/*,.mp4,.webm,.ogg,.mov,.avi,.mkv,.ts,.m4v" style="display: none;">
+        <div class="dropzone-content" id="btnDropzoneClick">
+          <div class="dropzone-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="44" height="44">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+          </div>
+          <h3>UPLOAD RECORDED EXAM CCTV VIDEO</h3>
+          <p>Drag and drop any MP4, WebM, or CCTV recording file here, or click to browse files.</p>
+          <button class="btn-green-primary btn-large" id="btnBrowseFile">
+            <span>Browse Video Files</span>
+          </button>
+          <div class="dropzone-badges">
+            <span class="dz-badge">Sub-50ms deterministic edge inference</span>
+            <span class="dz-badge">100% Client-side privacy &bull; Zero upload to external cloud</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 2: MALPRACTICE EVIDENCE & SNAPSHOT VAULT                  -->
+    <!-- Captures and catalogs photographic CCTV snapshots of student misbehavior -->
+    <!-- ================================================================= -->
+    <section class="snapshots-section" id="sectionSnapshots">
+      <div class="snapshots-header">
+        <div class="snapshots-header-left">
+          <div class="snapshots-badge-tag">
+            <span class="badge-dot-live"></span>
+            <span>AUTONOMOUS CCTV FORENSIC CAPTURE</span>
+          </div>
+          <h2 class="section-title text-left">Malpractice Evidence &amp; Snapshot Vault</h2>
+          <p class="section-subtitle">Photographic CCTV frames captured at the exact moment and location where malpractice occurred, tagged per student with keypoint telemetry and timestamp.</p>
+        </div>
+
+        <div class="snapshots-header-stats">
+          <div class="stat-pill">
+            <span class="stat-num text-cyan" id="statTotalSnapshots">0</span>
+            <span class="stat-label">TOTAL SNAPSHOTS</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-num text-red" id="statFlaggedStudents">0</span>
+            <span class="stat-label">FLAGGED STUDENTS</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-num text-green" id="statIntegrityVerified">100%</span>
+            <span class="stat-label">SHA-256 HASHED</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Chips Toolbar -->
+      <div class="snapshots-filter-bar">
+        <div class="filter-chips-group" id="snapFilterGroup">
+          <button class="snap-filter-btn active" data-filter="ALL" id="filterSnapAll">All Snapshots (<span id="countFilterAll">0</span>)</button>
+          <button class="snap-filter-btn" data-filter="PEEKING" id="filterSnapPeeking">Peeking / Gaze (<span id="countFilterPeeking">0</span>)</button>
+          <button class="snap-filter-btn" data-filter="PHONE" id="filterSnapPhone">Phone / Chits (<span id="countFilterPhone">0</span>)</button>
+          <button class="snap-filter-btn" data-filter="REACHING" id="filterSnapReach">Corridor Reaching (<span id="countFilterReach">0</span>)</button>
+          <button class="snap-filter-btn" data-filter="COLLUSION" id="filterSnapCollusion">Desk Collusion (<span id="countFilterCollusion">0</span>)</button>
+        </div>
+        <div class="filter-actions-group">
+          <button class="btn-outline-action" id="btnClearSnapshots" title="Clear snapshot gallery">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+            <span>Clear Gallery</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Photographic Snapshots Grid -->
+      <div class="snapshots-grid" id="snapshotsGalleryGrid">
+        <!-- Empty Placeholder when zero snapshots -->
+        <div class="empty-snapshots-card" id="emptySnapshotsPlaceholder">
+          <div class="empty-snap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </div>
+          <h3>NO MALPRACTICE SNAPSHOTS RECORDED YET</h3>
+          <p>The AI surveillance engine is continuously monitoring every student. As soon as sustained head-turning, phone usage, reaching, or collusion is detected in the video or live camera, high-resolution photographic evidence snapshots with exact time, location, and student ID will be captured and archived here automatically.</p>
+        </div>
+      </div>
+
+      <!-- High-Resolution Lightbox Modal for Snapshot Inspection -->
+      <div class="snapshot-modal-overlay" id="snapshotLightboxModal" style="display: none;">
+        <div class="snapshot-modal-card">
+          <button class="btn-close-modal" id="btnCloseSnapshotModal">&times;</button>
+          <div class="modal-image-wrapper">
+            <img id="modalSnapshotImg" src="" alt="Malpractice Snapshot Proof">
+          </div>
+          <div class="modal-info-panel">
+            <div class="modal-header-row">
+              <span class="modal-danger-badge" id="modalSeverityBadge">CRITICAL MALPRACTICE</span>
+              <span class="modal-time-stamp" id="modalTimeStamp">00:14.2</span>
+            </div>
+            <h3 class="modal-title" id="modalViolationTitle">SUSTAINED HEAD TURN (&gt;2.0s)</h3>
+            <div class="modal-meta-grid">
+              <div class="modal-meta-item">
+                <span class="meta-label">STUDENT / CANDIDATE:</span>
+                <span class="meta-val text-cyan" id="modalCandidateId">STUDENT_02</span>
+              </div>
+              <div class="modal-meta-item">
+                <span class="meta-label">EXAM LOCATION:</span>
+                <span class="meta-val text-green" id="modalLocation">Desk #02 (Front Row, Center)</span>
+              </div>
+              <div class="modal-meta-item">
+                <span class="meta-label">CONFIDENCE RATING:</span>
+                <span class="meta-val text-cyan" id="modalConfidence">97.8% (YOLOv8-Pose)</span>
+              </div>
+              <div class="modal-meta-item">
+                <span class="meta-label">FORENSIC HASH:</span>
+                <span class="meta-val text-purple" id="modalHash">0x9C4F1A...</span>
+              </div>
+            </div>
+            <p class="modal-details" id="modalDetailsText"></p>
+            <div class="modal-actions-row">
+              <button class="btn-green-primary" id="btnDownloadModalSnapshot">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                <span>Download Photo Evidence</span>
+              </button>
+              <button class="btn-outline-secondary" id="btnModalJumpVideo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>Jump to Video Moment</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 4: INCIDENT VAULT & SQLITE AUDIT TELEMETRY                -->
+    <!-- Spacious, readable tabular history for invigilators and proctors  -->
+    <!-- ================================================================= -->
+    <section class="vault-section" id="sectionVault">
+      <div class="vault-section-header">
+        <div>
+          <h2 class="section-title text-left">Incident Vault &amp; Telemetry Ledger</h2>
+          <p class="section-subtitle">Sub-50ms deterministic edge telemetry with offline-capable SQLite persistence</p>
+        </div>
+        <div class="vault-actions">
+          <button class="btn-green-primary" id="btnExportJson">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            <span>Export JSON Audit Evidence</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Real-Time Alert Feed Cards -->
+      <div class="alert-feed-container">
+        <h3 class="vault-subheading">Active Malpractice Alerts Feed</h3>
+        <div class="alert-feed-list" id="alertFeedList">
+          <!-- Dynamically populated -->
+          <div class="empty-feed-placeholder" id="emptyAlertPlaceholder">
+            <span>No active malpractice alerts flagged yet. System is actively scanning candidate postures.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SQLite Structured Table Preview -->
+      <div class="sqlite-table-card">
+        <div class="sqlite-table-top">
+          <h3>SQLite Ledger (Deterministic Transaction Log)</h3>
+          <span class="badge-tag">AES-256 INTEGRITY HASHED</span>
+        </div>
+        <div class="sqlite-table-wrapper">
+          <div class="sqlite-table-header">
+            <span>TIME</span>
+            <span>EVENT TYPE</span>
+            <span>CONFIDENCE</span>
+            <span>INTEGRITY HASH</span>
+          </div>
+          <div class="sqlite-rows-body" id="sqliteRowsContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <strong>CAMPUS SENTINEL // CCTV AI</strong> &bull; Autonomous Exam Integrity &amp; Edge Vision Framework
+      </div>
+      <div class="footer-right">
+        <span>Powered by YOLOv8n-pose &bull; BoT-SORT &bull; Temporal Heuristics Filter</span>
+      </div>
+    </footer>
+
+  </main>
+
+  <script src="app.js?v=8.0"></script>
+</body>
+</html>
